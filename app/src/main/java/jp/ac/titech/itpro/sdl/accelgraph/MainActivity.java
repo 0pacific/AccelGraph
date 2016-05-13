@@ -18,8 +18,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     private TextView rateView, accuracyView;
     private GraphView xView, yView, zView;
 
-    private SensorManager sensorMgr;
-    private Sensor accelerometer;
+    private SensorManager sensorMgr , anoSensorMgr;
+    private Sensor accelerometer , gyro;
 
     private final static long GRAPH_REFRESH_WAIT_MS = 20;
 
@@ -54,6 +54,15 @@ public class MainActivity extends Activity implements SensorEventListener {
             return;
         }
 
+        anoSensorMgr = (SensorManager) getSystemService(SENSOR_SERVICE);
+        gyro = sensorMgr.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        if (gyro == null) {
+            Toast.makeText(this, "No Gyro!",
+                    Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         handler = new Handler();
     }
 
@@ -62,6 +71,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         super.onResume();
         Log.i(TAG, "onResume");
         sensorMgr.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+        anoSensorMgr.registerListener(this, gyro , SensorManager.SENSOR_DELAY_FASTEST);
         th = new GraphRefreshThread();
         th.start();
     }
@@ -76,10 +86,17 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        vx = alpha * vx + (1 - alpha) * event.values[0];
-        vy = alpha * vy + (1 - alpha) * event.values[1];
-        vz = alpha * vz + (1 - alpha) * event.values[2];
-        rate = ((float) (event.timestamp - prevts)) / (1000 * 1000);
+        if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+
+            vx = alpha * vx + (1 - alpha) * event.values[0];
+            vy = alpha * vy + (1 - alpha) * event.values[1];
+            vz = alpha * vz + (1 - alpha) * event.values[2];
+            rate = ((float) (event.timestamp - prevts)) / (1000 * 1000);
+        }
+        if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            final float[] ev = event.values;
+            Log.i(TAG, "gyro_x:" + ev[0] + ", gyro_y:" + ev[1] + ", gyro_z" + ev[2]);
+        }
         prevts = event.timestamp;
     }
 
