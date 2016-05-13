@@ -17,6 +17,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     private TextView rateView, accuracyView;
     private GraphView xView, yView, zView;
+    private GraphView gxView, gyView, gzView;
 
     private SensorManager sensorMgr , anoSensorMgr;
     private Sensor accelerometer , gyro;
@@ -24,11 +25,13 @@ public class MainActivity extends Activity implements SensorEventListener {
     private final static long GRAPH_REFRESH_WAIT_MS = 20;
 
     private final static float alpha = 0.8F;
+    private final static float alphaV = 0.5F;
 
     private GraphRefreshThread th = null;
     private Handler handler;
 
     private float vx, vy, vz;
+    private float gx, gy, gz;
     private float rate;
     private int accuracy;
     private long prevts;
@@ -44,6 +47,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         xView = (GraphView) findViewById(R.id.x_view);
         yView = (GraphView) findViewById(R.id.y_view);
         zView = (GraphView) findViewById(R.id.z_view);
+        gxView = (GraphView) findViewById(R.id.g_x_view);
+        gyView = (GraphView) findViewById(R.id.g_y_view);
+        gzView = (GraphView) findViewById(R.id.g_z_view);
 
         sensorMgr = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -91,12 +97,16 @@ public class MainActivity extends Activity implements SensorEventListener {
             vx = alpha * vx + (1 - alpha) * event.values[0];
             vy = alpha * vy + (1 - alpha) * event.values[1];
             vz = alpha * vz + (1 - alpha) * event.values[2];
-            rate = ((float) (event.timestamp - prevts)) / (1000 * 1000);
         }
         if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
-            final float[] ev = event.values;
-            Log.i(TAG, "gyro_x:" + ev[0] + ", gyro_y:" + ev[1] + ", gyro_z" + ev[2]);
+
+            gx = alpha * gx + (1 - alphaV) * event.values[0];
+            gy = alpha * gy + (1 - alphaV) * event.values[1];
+            gz = alpha * gz + (1 - alphaV) * event.values[2];
+//            final float[] ev = event.values;
+//            Log.i(TAG, "gyro_x:" + ev[0] + ", gyro_y:" + ev[1] + ", gyro_z" + ev[2]);
         }
+        rate = ((float) (event.timestamp - prevts)) / (1000 * 1000);
         prevts = event.timestamp;
     }
 
@@ -117,6 +127,9 @@ public class MainActivity extends Activity implements SensorEventListener {
                             xView.addData(vx, true);
                             yView.addData(vy, true);
                             zView.addData(vz, true);
+                            gxView.addData(gx, true);
+                            gyView.addData(gy, true);
+                            gzView.addData(gz, true);
                         }
                     });
                     Thread.sleep(GRAPH_REFRESH_WAIT_MS);
